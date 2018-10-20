@@ -3,7 +3,7 @@ Jeffy
 
 # Description
 
-Serverless "Application" Framework
+Event and Contract Driven Serverless **"Application"** Framework
 
 # Requirements
 
