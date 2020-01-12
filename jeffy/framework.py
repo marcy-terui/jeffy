@@ -6,6 +6,18 @@ framework = None
 
 
 class Jeffy(object):
+    """
+    Jeffy framework main class.
+
+    Attributes
+    ----------
+    logger: logging.Logger
+        Logger instance
+    enable_event_logging: bool
+        Enable event payload logging
+    enable_result_logging: bool
+        Enable result(return value of the functions) logging
+    """
 
     def __init__(
         self,
@@ -17,7 +29,7 @@ class Jeffy(object):
         self.enable_event_logging = enable_event_logging
         self.enable_result_logging = enable_result_logging
 
-    def log(self, msg: Any, level: int =logging.INFO) -> None:
+    def log(self, msg: Any, level: int = logging.INFO) -> None:
         self.logger.log(level, msg)
 
     def _event_log(self, msg: Any) -> None:
@@ -40,7 +52,7 @@ class Jeffy(object):
 
 def setup(**kwargs: dict) -> Jeffy:
     """
-    Setup Jeffy framework
+    Jeffy framework setup.
 
     Parameters
     ----------
