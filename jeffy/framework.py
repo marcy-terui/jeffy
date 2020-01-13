@@ -1,6 +1,7 @@
 import functools
 import logging
 from typing import Any, Callable
+from jeffy.decorators import Decorators
 
 framework = None
 
@@ -28,6 +29,7 @@ class Jeffy(object):
         self.logger = logger
         self.enable_event_logging = enable_event_logging
         self.enable_result_logging = enable_result_logging
+        self.decorator = Decorators()
 
     def log(self, msg: Any, level: int = logging.INFO) -> None:
         self.logger.log(level, msg)

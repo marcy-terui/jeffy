@@ -37,7 +37,7 @@ setup_options = dict(
     author_email='info@serverless-operations.com',
     url='https://github.com/serverless-operations/jeffy',
     packages=find_packages(exclude=['tests*', 'lambda_function']),
-    install_requires=[],
+    install_requires=['jsonschema'],
     license="MIT License",
     classifiers=[
         'Development Status :: 1 - Planning',
