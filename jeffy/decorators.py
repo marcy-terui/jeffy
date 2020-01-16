@@ -181,7 +181,11 @@ class Decorators(object):
         Usage::
             >>> from jeffy.framework import setup
             >>> app = setup()
-            >>> @app.decorator.api()
+            >>> @app.decorator.api(
+            >>>     response_headers={
+            >>>         'Content-Type': 'application/json; charset=utf-8'
+            >>>     }
+            >>> )
             ... def handler(event, context):
             ...     return event['body']['foo']
         """
@@ -253,7 +257,17 @@ class Decorators(object):
         Usage::
             >>> from jeffy.framework import setup
             >>> app = setup()
-            >>> @app.decorator.api_json_scheme_validator()
+            >>> @app.decorator.api_json_scheme_validator(
+            >>>     json_scheme={
+            >>>         'type': 'object',
+            >>>         'properties': {
+            >>>             'message': {'type': 'string'}
+            >>>         }
+            >>>     },
+            >>>     response_headers={
+            >>>         'Content-Type': 'application/json; charset=utf-8'
+            >>>     }
+            >>> )
             ... def handler(event, context):
             ...     return event['body']['foo']
         """
