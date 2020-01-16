@@ -6,7 +6,7 @@ import functools
 import traceback
 import uuid
 import jsonschema
-from typing import Callable
+from typing import Dict, str, Callable
 
 logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
@@ -14,6 +14,18 @@ logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
 
 class Decorators(object):
     def auto_logging(self, func: Callable) -> Callable:
+        """
+        Automatically logs payload event and return value of lambda
+        and when error occurs.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.auto_logging
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
+
         @functools.wraps(func)
         def wrapper(event, context):
             logger.info(event)
@@ -26,7 +38,18 @@ class Decorators(object):
                 raise e
         return wrapper
 
-    def capture_correlation_id(self, payload=None):
+    def capture_correlation_id(self, payload: Dict = {}) -> str:
+        """
+        Automatically generates and capurures correlation_id.
+
+        Parameters
+        ----------
+        payload: dict
+            Payload event with including `x-correlationid` which should be passed
+        Returns
+        -------
+        correlation_id : str
+        """
         if payload.get('x-correlation-id') is None:
             correlation_id = str(uuid.uuid4())
         else:
@@ -35,7 +58,16 @@ class Decorators(object):
         return correlation_id
 
     def schedule(self, func: Callable) -> Callable:
-        """スケジュールイベントのデコレータ."""
+        """
+        Decorator for schedule event. just captures correlation id before main process.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.schedule
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         @functools.wraps(func)
         def wrapper(event, context):
             event['CorrelationId'] = self.capture_correlation_id()
@@ -45,8 +77,18 @@ class Decorators(object):
                 raise e
         return wrapper
 
-    def sqs(self, func):
-        """SQSイベントのデコレータ."""
+    def sqs(self, func: Callable) -> Callable:
+        """
+        Decorator for sqs event. Automatically divide 'Records' for making it easy to treat it
+        inside main process of Lambda.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.sqs
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         @functools.wraps(func)
         def wrapper(event, context):
             for record in event['Records']:
@@ -58,8 +100,18 @@ class Decorators(object):
                     raise e
         return wrapper
 
-    def dynamodb_stream(self, func):
-        """Dynamodbイベントのデコレータ."""
+    def dynamodb_stream(self, func: Callable) -> Callable:
+        """
+        Decorator for Dynamodb stream event. Automatically divide 'Records' for making it easy to treat it
+        inside main process of Lambda.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.dynamodb_stream
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         @functools.wraps(func)
         def wrapper(event, context):
             for record in event['Records']:
@@ -70,8 +122,18 @@ class Decorators(object):
                     raise e
         return wrapper
 
-    def kinesis_stream(self, func):
-        """KinesisStreamイベントのデコレータ."""
+    def kinesis_stream(self, func: Callable) -> Callable:
+        """
+        Decorator for Kinesis stream event. Automatically divide 'Records' for making it easy to treat it
+        inside main process of Lambda.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.kinesis_stream
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         @functools.wraps(func)
         def wrapper(event, context):
             for record in event['Records']:
@@ -83,8 +145,18 @@ class Decorators(object):
                     raise e
         return wrapper
 
-    def sns(self, func):
-        """SNSイベントのデコレータ."""
+    def sns(self, func: Callable) -> Callable:
+        """
+        Decorator for SNS event. Automatically divide 'Records' for making it easy to treat it
+        inside main process of Lambda.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.sns
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         @functools.wraps(func)
         def wrapper(event, context):
             for record in event['Records']:
@@ -96,8 +168,23 @@ class Decorators(object):
                 raise e
         return wrapper
 
-    def api(self, func, response_headers={}):
-        """APIのデコレータ."""
+    def api(self, func: Callable, response_headers: Dict = {}) -> Callable:
+        """
+        Decorator for API Gateway event. Automatically parse string if the 'body' can be parsed as Dictionary.
+        Automatically returs 500 error if unexpected error happens.
+
+        Parameters
+        ----------
+        response_headers: dict
+            Response headers when 500 error occurs.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.api()
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         @functools.wraps(func)
         def wrapper(event, context):
             try:
@@ -119,25 +206,57 @@ class Decorators(object):
                 }
         return wrapper
 
-    def json_scheme_validator(self, json_scheme):
-        """JSON Scheme Validatorのデコレータ."""
+    def json_scheme_validator(self, json_scheme: Dict) -> Callable:
+        """
+        Decorator for Json scheme valiidator. Automatically validate body with following json scheme.
+
+        Parameters
+        ----------
+        json_scheme: dict
+            Json scheme definition for validation.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.json_scheme_validator(
+            >>>     json_scheme={
+            >>>         'type': 'object',
+            >>>         'properties': {
+            >>>             'message': {'type': 'string'}
+            >>>         }
+            >>>     }
+            >>> )
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         def wrapper_wrapper(func):
             @functools.wraps(func)
             def wrapper(event, context):
                 try:
                     jsonschema.validate(json.loads(event.get('body')), json_scheme)
                     return func(event, context)
-                except TypeError as e:
-                    raise e
-                except json.decoder.JSONDecodeError as e:
-                    raise e
-                except jsonschema.ValidationError as e:
+                except (json.decoder.JSONDecodeError, jsonschema.ValidationError, TypeError) as e:
                     raise e
             return wrapper
         return wrapper_wrapper
 
-    def api_json_scheme_validator(self, json_scheme, response_headers={}):
-        """JSON Scheme Validatorのデコレータ."""
+    def api_json_scheme_validator(self, json_scheme: Dict, response_headers: Dict = {}) -> Callable:
+        """
+        Decorator for Json scheme valiidator for api. Automatically validate body with following json scheme.
+        Returns 400 error if the validation failes.
+
+        Parameters
+        ----------
+        json_scheme: dict
+            Json scheme definition for validation.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.api_json_scheme_validator()
+            ... def handler(event, context):
+            ...     return event['body']['foo']
+        """
         def wrapper_wrapper(func):
             @functools.wraps(func)
             def wrapper(event, context):
@@ -162,4 +281,3 @@ class Decorators(object):
                     }
             return wrapper
         return wrapper_wrapper
-
