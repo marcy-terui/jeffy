@@ -3,16 +3,22 @@ import json
 import base64
 import os
 import functools
-import traceback
 import uuid
 import jsonschema
-from typing import Dict, str, Callable
+from typing import Dict, Callable
 
 logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
 
 
 class Decorators(object):
+    """
+    Jeffy decolator class.
+    """
+
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
+
     def auto_logging(self, func: Callable) -> Callable:
         """
         Automatically logs payload event and return value of lambda
@@ -28,13 +34,13 @@ class Decorators(object):
 
         @functools.wraps(func)
         def wrapper(event, context):
-            logger.info(event)
+            self.logger.info(event)
             try:
                 result = func(event, context)
-                logger.info(result)
+                self.logger.info(result)
                 return result
             except Exception as e:
-                logger.error(traceback.format_exc())
+                self.logger.error(e)
                 raise e
         return wrapper
 
@@ -50,11 +56,11 @@ class Decorators(object):
         -------
         correlation_id : str
         """
-        if payload.get('x-correlation-id') is None:
+        if payload is None or payload.get('x-correlation-id') is None:
             correlation_id = str(uuid.uuid4())
         else:
             correlation_id = payload.get('x-correlation-id')
-        logger.info('x-correlation-id:{}'.format(correlation_id))
+        self.logger.setup({'correlation_id': correlation_id})
         return correlation_id
 
     def schedule(self, func: Callable) -> Callable:
