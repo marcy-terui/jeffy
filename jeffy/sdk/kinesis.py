@@ -5,7 +5,7 @@ from typing import Any
 
 class Kinesis():
     """
-    SQS Client.
+    Kinesis Client.
     """
 
     _resource = None

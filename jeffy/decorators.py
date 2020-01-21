@@ -10,7 +10,7 @@ from jeffy.sdk.s3 import S3
 
 class Decorators(object):
     """
-    Jeffy decolator class.
+    Jeffy decorator class.
     """
 
     def __init__(self, logger: logging.Logger):

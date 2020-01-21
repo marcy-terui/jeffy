@@ -182,10 +182,65 @@ def handler(event, context):
     return event["body"]["foo"]
 ```
 
-## CorrelationID
+## CorrelationIDs
 CorrelationID is to trace subsequent Lambda functions and services. Jeffy automatically extract correlation IDs and caputure logs from the invocation event.
 
 Also, Jeffy provide boto3 wrapper client to create and inject correlation IDs.
+
+### Kinesis Clinent
+
+```python
+from jeffy.sdk.kinesis import Kinesis
+
+def handler(event, context):
+    Kinesis.put_record(
+        stream_name=os.environ["STREAM_NAME"],
+        data={"foo": "bar"},
+        partition_key="uuid",
+        correlation_id=event.get("correlation_id")
+    )
+```
+
+### SNS Client
+
+```python
+from jeffy.sdk.sns import Sns
+
+def handler(event, context):
+    Sns.publish(
+        topic_arn=os.environ["TOPIC_ARN"],
+        message="message",
+        subject="subject",
+        correlation_id=event.get("correlation_id")
+    )
+```
+
+### SQS Client
+
+```python
+from jeffy.sdk.sqs import Sqs
+
+def handler(event, context):
+    Sqs.send_message(
+        queue_url=os.environ["QUEUE_URL"],
+        message="message",
+        correlation_id=event.get("correlation_id")
+    )
+```
+
+### S3 Client
+
+```python
+from jeffy.sdk.s3 import S3
+
+def handler(event, context):
+    S3.upload_file(
+        file_path="path/to/file", 
+        bucket_name=os.environ["BUCKET_NAME"],
+        object_name="path/to/object",
+        correlation_id=event.get("correlation_id")
+    )
+```
 
 # Requirements
 
