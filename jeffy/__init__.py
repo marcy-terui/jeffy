@@ -1,10 +1,8 @@
 # -*- coding:utf-8 -*-
 
-"""
-Serverless "Application" Framework
-"""
+"""Serverless "Application" Framework."""
 
-__author__ = "Masashi Terui <marcy9114+pypi@gmail.com>"
-__status__ = "alpha"
-__version__ = "0.0.1"
-__date__ = "20 October 2018"
+__author__ = "Serverless Operations <info@serverless-operations.com>"
+__status__ = "beta"
+__version__ = "0.1.0"
+__date__ = "20 January 20２０"
