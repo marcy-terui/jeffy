@@ -15,7 +15,7 @@ $ pip install jeffy
 # Features
 ## Logger
 Jeffy logger automatically inject some Lambda context infomation.
-```
+```python
 from jeffy.framework import setup
 app = setup()
 
@@ -24,7 +24,7 @@ def handler(event, context):
 ```
 
 Output in CloudWatchLogs
-```
+```json
 {
     'message': {
         'foo': 'bar', 'item': 'aa'
@@ -41,7 +41,7 @@ Output in CloudWatchLogs
 
 You can inject some infomation you want to output with using `setup` method.
 
-```
+```python
 from jeffy.framework import setup
 app = setup()
 
@@ -55,7 +55,7 @@ def handler(event, context):
 ```
 
 Output in CloudWatchLogs
-```
+```json
 {
     'message': {
         'foo': 'bar', 'item': 'aa'
@@ -74,7 +74,7 @@ Output in CloudWatchLogs
 
 `auth_logging` decorator allows you to output `event`, `response` and `stacktrace` when you face Exceptions
 
-```
+```python
 from jeffy.framework import setup
 app = setup()
 
@@ -90,7 +90,7 @@ def handler(event, context):
 
 Error output with auto_logging
 
-```
+```json
 {
     'error_message': JSONDecodeError('Expecting value: line 1 column 1 (char 0)'), 
     'stack_trace': 'Traceback (most recent call last):
@@ -115,11 +115,6 @@ Error output with auto_logging
 
 ```
 
-## CorrelationID
-CorrelationID is to trace subsequent Lambda functions and services. Jeffy automatically extract correlation IDs and caputure logs from the invocation event.
-
-Also, Jeffy provide boto3 wrapper client to create and inject correlation IDs.
-
 ## Decorators
 Decorators make simple to implement common lamdba tasks, such as parsing array from Kinesis, SNS, SQS events etc.
 
@@ -129,7 +124,7 @@ Here are provided decorators
 
 - `schedule`: Decorator for schedule event. just captures correlation id before main process.
 
-- `sqs`: Decorator for sqs event. Automatically divide 'Records' for making it easy to treat it inside main process of Lambda.
+- `sqs`: Decorator for sqs event. Automaticlly divide 'Records' for making it easy to treat it inside main process of Lambda.
 
 - `dynamodb_stream`: Decorator for Dynamodb stream event. Automatically divide 'Records' for making it easy to treat it inside main process of Lambda.
 
@@ -142,7 +137,7 @@ Here are provided decorators
 - `api`: Decorator for API Gateway event. Automatically parse string if the 'body' can be parsed as Dictionary. Automatically returs 500 error if unexpected error happens.
 
 Using above decorators, inject decorator name to `<decorator name>` in the folloing example.
-```
+```python
 from jeffy.framework import setup
 app = setup()
 @app.decorator.<decorator name>
@@ -151,6 +146,46 @@ app = setup()
 def handler(event, context):
     ...
 ```
+
+- `json_scheme_validator`: Decorator for Json scheme valiidator. Automatically validate body with following json scheme.
+```python
+from jeffy.framework import setup
+app = setup()
+@app.decorator.json_scheme_validator(
+    json_scheme={
+        'type': 'object',
+        'properties': {
+            'message': {'type': 'string'}
+        }
+    }
+)
+def handler(event, context):
+    return event['body']['foo']
+```
+
+- `api_json_scheme_validator`: Decorator for Json scheme valiidator for api. Automatically validate body with following json scheme. Returns 400 error if the validation failes.
+```python
+from jeffy.framework import setup
+app = setup()
+@app.decorator.api_json_scheme_validator(
+    json_scheme={
+        'type': 'object',
+        'properties': {
+            'message': {'type': 'string'}
+        }
+    },
+    response_headers={
+        'Content-Type': 'application/jsoset=utf-8'
+    }
+)
+def handler(event, context):
+    return event['body']['foo']
+```
+
+## CorrelationID
+CorrelationID is to trace subsequent Lambda functions and services. Jeffy automatically extract correlation IDs and caputure logs from the invocation event.
+
+Also, Jeffy provide boto3 wrapper client to create and inject correlation IDs.
 
 # Requirements
 
