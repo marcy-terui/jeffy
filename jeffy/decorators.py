@@ -1,14 +1,11 @@
 import logging
 import json
 import base64
-import os
 import functools
 import uuid
 import jsonschema
 from typing import Dict, Callable
-
-logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
+from jeffy.sdk.s3 import S3
 
 
 class Decorators(object):
@@ -56,10 +53,10 @@ class Decorators(object):
         -------
         correlation_id : str
         """
-        if payload is None or payload.get('x-correlation-id') is None:
+        if payload is None or payload.get('correlation_id') is None:
             correlation_id = str(uuid.uuid4())
         else:
-            correlation_id = payload.get('x-correlation-id')
+            correlation_id = payload.get('correlation_id')
         self.logger.setup({'correlation_id': correlation_id})
         return correlation_id
 
@@ -76,7 +73,7 @@ class Decorators(object):
         """
         @functools.wraps(func)
         def wrapper(event, context):
-            event['CorrelationId'] = self.capture_correlation_id()
+            event['correlation_id'] = self.capture_correlation_id()
             try:
                 func(event, context)
             except Exception as e:
@@ -99,7 +96,7 @@ class Decorators(object):
         def wrapper(event, context):
             for record in event['Records']:
                 message = json.loads(record['body'])
-                message['x-correlation-id'] = self.capture_correlation_id(payload=message)
+                message['correlation_id'] = self.capture_correlation_id(payload=message)
                 try:
                     return func(message, context)
                 except Exception as e:
@@ -121,7 +118,7 @@ class Decorators(object):
         @functools.wraps(func)
         def wrapper(event, context):
             for record in event['Records']:
-                record['dynamodb']['x-correlation-id'] = self.capture_correlation_id(payload=record['dynamodb'])
+                record['dynamodb']['correlation_id'] = self.capture_correlation_id(payload=record['dynamodb'])
                 try:
                     return func(record['dynamodb'], context)
                 except Exception as e:
@@ -144,9 +141,9 @@ class Decorators(object):
         def wrapper(event, context):
             for record in event['Records']:
                 payload = json.loads(base64.b64decode(record['kinesis']['data']).decode())
-                payload['x-correlation-id'] = self.capture_correlation_id(payload=payload)
+                payload['correlation_id'] = self.capture_correlation_id(payload=payload)
                 try:
-                    return func(payload, context)
+                    return func(payload['item'], context)
                 except Exception as e:
                     raise e
         return wrapper
@@ -167,11 +164,44 @@ class Decorators(object):
         def wrapper(event, context):
             for record in event['Records']:
                 message = json.loads(record['Sns']['Message'])
-                message['x-correlation-id'] = self.capture_correlation_id(payload=message)
+                message['correlation_id'] = self.capture_correlation_id(payload=message)
             try:
                 return func(message, context)
             except Exception as e:
                 raise e
+        return wrapper
+
+    def s3(self, func: Callable) -> Callable:
+        """
+        Decorator for S3 event. Automatically parse object body stream to Lambda.
+
+        Usage::
+            >>> from jeffy.framework import setup
+            >>> app = setup()
+            >>> @app.decorator.s3
+            ... def handler(event, context):
+            ...     return event['body']
+        """
+        @functools.wraps(func)
+        def wrapper(event, context):
+            for record in event['Records']:
+                bucket = record['s3']['bucket']['name']
+                key = record['s3']['object']['key']
+
+                try:
+                    response = S3.get_resource().get_object(Bucket=bucket, Key=key)
+                    if response['Metadata'].get('correlation_id') is None:
+                        correlation_id = self.capture_correlation_id()
+                    else:
+                        correlation_id = response['Metadata'].get('correlation_id')
+                    func({
+                        'key': key,
+                        'bucket_name': bucket,
+                        'body': response['Body'],
+                        'correlation_id': correlation_id
+                    }, context)
+                except Exception as e:
+                    raise e
         return wrapper
 
     def api(self, func: Callable, response_headers: Dict = {}) -> Callable:
@@ -198,7 +228,7 @@ class Decorators(object):
         @functools.wraps(func)
         def wrapper(event, context):
             try:
-                event['x-correlation-id'] = self.capture_correlation_id(payload=event.get('headers'))
+                event['correlation_id'] = self.capture_correlation_id(payload=event.get('headers'))
                 if event.get('body') is not None:
                     event['body'] = json.loads(event.get('body'))
                 return func(event, context)
