@@ -3,8 +3,14 @@ Jeffy(Beta)
 
 # Description
 
-Event and Contract Driven Serverless **"Application"** Framework.
-Utilities for Lambda functions to make it easy to develop serverless applications.
+Jeffy is Serverless **"Application"** Framework, which is
+suite of Utilities for Lambda functions to make it easy to develop serverless applications.
+
+Mainly, focusing on three things.
+
+- Logging: Providing easy to see JSON format logging, auto logging as a decorator for capturing events and responses and errors, configurable to inject additional attributes what you want to see to logs.
+- Tracing: Traceable events within related functions and AWS services with generating and passing `correlation_id`.
+- Decorators: To save time to implement common things for Lambda functions, providing some useful decorators.
 
 # Install
 
@@ -14,7 +20,8 @@ $ pip install jeffy
 
 # Features
 ## Logger
-Jeffy logger automatically inject some Lambda context infomation.
+### Basic Usage
+Jeffy logger automatically inject some Lambda contexts to CloudWatchLogs.
 ```python
 from jeffy.framework import setup
 app = setup()
@@ -39,7 +46,8 @@ Output in CloudWatchLogs
 }
 ```
 
-You can inject some infomation you want to output with using `setup` method.
+### Injecting additional attributes to CloudWatchLogs
+You can inject some additional attributes what you want to output with using `setup` method.
 
 ```python
 from jeffy.framework import setup
@@ -72,6 +80,7 @@ Output in CloudWatchLogs
 }
 ```
 
+### Auto Logging
 `auth_logging` decorator allows you to output `event`, `response` and `stacktrace` when you face Exceptions
 
 ```python
