@@ -129,37 +129,13 @@ Decorators make simple to implement common lamdba tasks, such as parsing array f
 
 Here are provided decorators
 
-- `auto_logging`: Automatically logs payload event and return value of lambda and when error occurs.
+### json_scheme_validator
+Decorator for Json scheme valiidator. Automatically validate `event.["body"]` with following json scheme you define. raise exception if the validation fails.
 
-- `schedule`: Decorator for schedule event. just captures correlation id before main process.
-
-- `sqs`: Decorator for sqs event. Automaticlly divide"Records" for making it easy to treat it inside main process of Lambda.
-
-- `dynamodb_stream`: Decorator for Dynamodb stream event. Automatically divide"Records" for making it easy to treat it inside main process of Lambda.
-
-- `kinesis_stream`: Decorator for Kinesis stream event. Automatically divide"Records" for making it easy to treat it inside main process of Lambda.
-
-- `sns`: Decorator for SNS event. Automatically divide"Records" for making it easy to treat it inside main process of Lambda.
-
-- `s3`: Decorator for S3 event. Automatically parse object body stream to Lambda.
-
-- `api`: Decorator for API Gateway event. Automatically parse string if the"body" can be parsed as Dictionary. Automatically returs 500 error if unexpected error happens.
-
-Using above decorators, inject decorator name to `<decorator name>` in the folloing example.
 ```python
 from jeffy.framework import setup
 app = setup()
-@app.decorator.<decorator name>
-@app.decorator.sns
-@app.decorator.auto_logging
-def handler(event, context):
-    ...
-```
 
-- `json_scheme_validator`: Decorator for Json scheme valiidator. Automatically validate body with following json scheme.
-```python
-from jeffy.framework import setup
-app = setup()
 @app.decorator.json_scheme_validator(
     json_scheme={
        "type":"object",
@@ -169,10 +145,12 @@ app = setup()
     }
 )
 def handler(event, context):
-    return event["body"]["foo"]
+    return event["body"]["foo"] 
 ```
 
-- `api_json_scheme_validator`: Decorator for Json scheme valiidator for api. Automatically validate body with following json scheme. Returns 400 error if the validation failes.
+### api_json_scheme_validator
+Decorator for Json scheme valiidator for API Gateway. Automatically validate `event.["body"]` with following json scheme. Returns 400 error if the validation fails.
+
 ```python
 from jeffy.framework import setup
 app = setup()
@@ -190,6 +168,132 @@ app = setup()
 def handler(event, context):
     return event["body"]["foo"]
 ```
+
+### api
+Decorator for API Gateway event. Automatically parse string if `event["body"]` can be parsed as Dictionary and set correlation_id in event["correlation_id"] you should pass to next event, returns 500 error if unexpected error happens.
+
+```python
+from jeffy.framework import setup
+app = setup()
+
+@app.decorator.api
+def handler(event, context):
+    return event["body"]["foo"] # returns 500 error if unexpected error happens.
+```
+
+### sqs
+Decorator for sqs event. Automaticlly parse "event.Records" list from SQS event source to each items for making it easy to treat it inside main process of Lambda.
+
+```python
+from jeffy.framework import setup
+app = setup()
+
+@app.decorator.sqs
+def handler(event, context):
+    return event["foo"]
+    """
+    "event.Records" list from SQS event source was parsed each items
+    if event.Records value is the following,
+     [
+         {"foo": 1},
+         {"foo": 2}
+     ]
+
+    event["foo"] value is 1 and 2, event["correlation_id"] is correlation_id you should pass to next event
+    """
+```
+
+### sns
+Decorator for sns event. Automaticlly parse "event.Records" list from SNS event source to each items for making it easy to treat it inside main process of Lambda.
+
+```python
+from jeffy.framework import setup
+app = setup()
+
+@app.decorator.sns
+def handler(event, context):
+    return event["foo"]
+    """
+    "event.Records" list from SNS event source was parsed each items
+    if event.Records value is the following,
+     [
+         {"foo": 1},
+         {"foo": 2}
+     ]
+
+    event["foo"] value is 1 and 2, event["correlation_id"] is correlation_id you should pass to next event
+    """
+```
+
+### kinesis_stream
+Decorator for kinesis stream event. Automaticlly parse "event.Records" list from Kinesis event source to each items and decode it with base64 for making it easy to treat it inside main process of Lambda.
+
+```python
+@app.decorator.kinesis_stream
+def handler(event, context):
+    return event["foo"]
+    """
+    "event.Records" list from Kinesis event source was parsed each items
+    and decoded with base64 if event.Records value is the following,
+     [
+         <base64 encoded value>,
+         <base64 encoded value>
+     ]
+
+    event["foo"] value is 1 and 2, event["correlation_id"] is correlation_id you should pass to next event
+    """
+```
+
+### dynamodb_stream
+Decorator for dynamodb stream event. Automaticlly parse "event.Records" list from Dynamodb event source to  items for making it easy to treat it inside main process of Lambda.
+
+```python
+from jeffy.framework import setup
+app = setup()
+
+@app.decorator.dynamodb_stream
+def handler(event, context):
+    return event["foo"]
+    """
+    "event.Records" list from Dynamodb event source was parsed each items
+    if event.Records value is the following,
+     [
+         {"foo": 1},
+         {"foo": 2}
+     ]
+
+    event["foo"] value is 1 and 2, event["correlation_id"] is correlation_id you should pass to next event
+    """
+```
+
+### s3
+Decorator for S3 event. Automatically parse body stream from triggered S3 object and S3 bucket and key name to Lambda.
+
+```python
+from jeffy.framework import setup
+app = setup()
+
+@app.decorator.s3
+def handler(event, context):
+    event["key"] # S3 bucket key
+    event["bucket_name"] # S3 bucket name
+    event["body"] # object stream from triggered S3 object
+    event["correlation_id"] # correlation_id
+    
+```
+
+### schedule
+Decorator for schedule event. just captures correlation id before main Lambda process. do nothing other than that.
+
+```python
+from jeffy.framework import setup
+app = setup()
+
+@app.decorator.schedule
+def handler(event, context):
+    ...
+```
+
 
 ## CorrelationIDs
 CorrelationID is to trace subsequent Lambda functions and services. Jeffy automatically extract correlation IDs and caputure logs from the invocation event.
