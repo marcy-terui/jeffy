@@ -12,6 +12,36 @@ Mainly, focusing on three things.
 - Tracing: Traceable events within related functions and AWS services with generating and passing `correlation_id`.
 - Decorators: To save time to implement common things for Lambda functions, providing some useful decorators.
 
+# TOC
+
+- [Jeffy(Beta)](#jeffy-beta-)
+- [Description](#description)
+- [Install](#install)
+- [Features](#features)
+  * [Logger](#logger)
+    + [Basic Usage](#basic-usage)
+    + [Injecting additional attributes to CloudWatchLogs](#injecting-additional-attributes-to-cloudwatchlogs)
+    + [Auto Logging](#auto-logging)
+  * [Decorators](#decorators)
+    + [json_scheme_validator](#json-scheme-validator)
+    + [api_json_scheme_validator](#api-json-scheme-validator)
+    + [api](#api)
+    + [sqs](#sqs)
+    + [sns](#sns)
+    + [kinesis_stream](#kinesis-stream)
+    + [dynamodb_stream](#dynamodb-stream)
+    + [s3](#s3)
+    + [schedule](#schedule)
+  * [CorrelationIDs](#correlationids)
+    + [Kinesis Clinent](#kinesis-clinent)
+    + [SNS Client](#sns-client)
+    + [SQS Client](#sqs-client)
+    + [S3 Client](#s3-client)
+- [Requirements](#requirements)
+  * [Development](#development)
+  * [Authors](#authors)
+  * [License](#license)
+
 # Install
 
 ```sh
@@ -170,7 +200,7 @@ def handler(event, context):
 ```
 
 ### api
-Decorator for API Gateway event. Automatically parse string if `event["body"]` can be parsed as Dictionary and set correlation_id in event["correlation_id"] you should pass to next event, returns 500 error if unexpected error happens.
+Decorator for API Gateway event. Automatically parse string if `event["body"]` can be parsed as Dictionary and set correlation_id in `event["correlation_id"]` you should pass to next event, returns 500 error if unexpected error happens.
 
 ```python
 from jeffy.framework import setup
@@ -182,7 +212,7 @@ def handler(event, context):
 ```
 
 ### sqs
-Decorator for sqs event. Automaticlly parse "event.Records" list from SQS event source to each items for making it easy to treat it inside main process of Lambda.
+Decorator for sqs event. Automaticlly parse `"event.Records"` list from SQS event source to each items for making it easy to treat it inside main process of Lambda.
 
 ```python
 from jeffy.framework import setup
@@ -204,7 +234,7 @@ def handler(event, context):
 ```
 
 ### sns
-Decorator for sns event. Automaticlly parse "event.Records" list from SNS event source to each items for making it easy to treat it inside main process of Lambda.
+Decorator for sns event. Automaticlly parse `"event.Records"` list from SNS event source to each items for making it easy to treat it inside main process of Lambda.
 
 ```python
 from jeffy.framework import setup
@@ -226,7 +256,7 @@ def handler(event, context):
 ```
 
 ### kinesis_stream
-Decorator for kinesis stream event. Automaticlly parse "event.Records" list from Kinesis event source to each items and decode it with base64 for making it easy to treat it inside main process of Lambda.
+Decorator for kinesis stream event. Automaticlly parse `"event.Records"` list from Kinesis event source to each items and decode it with base64 for making it easy to treat it inside main process of Lambda.
 
 ```python
 @app.decorator.kinesis_stream
@@ -245,7 +275,7 @@ def handler(event, context):
 ```
 
 ### dynamodb_stream
-Decorator for dynamodb stream event. Automaticlly parse "event.Records" list from Dynamodb event source to  items for making it easy to treat it inside main process of Lambda.
+Decorator for dynamodb stream event. Automaticlly parse `"event.Records"` list from Dynamodb event source to  items for making it easy to treat it inside main process of Lambda.
 
 ```python
 from jeffy.framework import setup
