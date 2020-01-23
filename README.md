@@ -9,8 +9,9 @@ suite of Utilities for Lambda functions to make it easy to develop serverless ap
 Mainly, focusing on three things.
 
 - Logging: Providing easy to see JSON format logging, auto logging as a decorator for capturing events and responses and errors, configurable to inject additional attributes what you want to see to logs.
-- Tracing: Traceable events within related functions and AWS services with generating and passing `correlation_id`.
 - Decorators: To save time to implement common things for Lambda functions, providing some useful decorators.
+- Tracing: Traceable events within related functions and AWS services with generating and passing `correlation_id`.
+- Environment Variables: You can define configuration for Jeffy via Environment Variables of Lambda.
 
 # TOC
 
@@ -49,7 +50,7 @@ $ pip install jeffy
 ```
 
 # Features
-## Logger
+## Logging
 ### Basic Usage
 Jeffy logger automatically inject some Lambda contexts to CloudWatchLogs.
 ```python
@@ -325,10 +326,10 @@ def handler(event, context):
 ```
 
 
-## CorrelationIDs
-CorrelationID is to trace subsequent Lambda functions and services. Jeffy automatically extract correlation IDs and caputure logs from the invocation event.
+## Tracing
+`correlation_id` is to trace subsequent Lambda functions and services. Jeffy automatically extract correlation IDs and caputure logs from the invocation event.
 
-Also, Jeffy provide boto3 wrapper client to create and inject correlation IDs.
+Also, Jeffy provide boto3 wrapper client to create and inject `correlation_id`.
 
 ### Kinesis Clinent
 
@@ -385,6 +386,31 @@ def handler(event, context):
     )
 ```
 
+### Environment Variables
+Here is configutable values for Jeffy.
+
+| Environment variable | Description | Default |
+------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------
+ JEFFY_LOG_LEVEL | Sets logging level | "INFO" 
+
+### Example serverless.yml of Serverless Framework using supported environment variables
+
+You can switch loglevel according to environment. The following example is to enable debug log other than production. 
+
+```yaml
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    JEFFY_LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}, self:custom.logLevel.default}
+
+custom:
+  logLevel:
+    production: ERROR
+    default: DEBUG
+```
+
 # Requirements
 
 - Python 3
@@ -411,6 +437,13 @@ Authors
 
 - Bought up initial idea by [Masashi Terui](https://github.com/marcy-terui) (<marcy9114@gmail.com>)
 - Created and maintained by [Serverless Operations, Inc]()
+
+Credits
+-------
+Jeffy is inspired by the following products.
+- [Lambda Powertools](https://github.com/awslabs/aws-lambda-powertools)
+- [DAZN Lambda Powertools](https://github.com/getndazn/dazn-lambda-powertools)
+- [lambda_decorators](https://github.com/dschep/lambda-decorators)
 
 License
 -------
