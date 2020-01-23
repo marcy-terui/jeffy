@@ -3,7 +3,7 @@ Jeffy(Beta)
 
 # Description
 
-Jeffy is Serverless **"Application"** Framework, which is
+Jeffy is Serverless **"Application"** Framework for Python, which is
 suite of Utilities for Lambda functions to make it easy to develop serverless applications.
 
 Mainly, focusing on three things.
