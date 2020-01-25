@@ -115,7 +115,7 @@ Output in CloudWatchLogs
 ```
 
 ### Auto Logging
-`auth_logging` decorator allows you to output `event`, `response` and `stacktrace` when you face Exceptions
+`auto_logging` decorator allows you to output `event`, `response` and `stacktrace` when you face Exceptions
 
 ```python
 from jeffy.framework import setup
