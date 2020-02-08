@@ -49,7 +49,7 @@ class Logger(object):
         """
         message_obj = {'message': message}
         message_obj.update(self.log_context)
-        self.logger.info(message_obj)
+        self.logger.debug(message_obj)
 
     def info(self, message: Any) -> None:
         """
