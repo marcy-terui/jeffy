@@ -1,13 +1,17 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/serverless-operations/jeffy/master/logo.png" alt="Serverless Application Framework Jeffy" style="max-width:60%;">
+<img src="https://raw.githubusercontent.com/serverless-operations/jeffy/master/logo.png" alt="Serverless Application Framework Jeffy" width="60%">
 </div>
 
-# Description
+<div align="center">
+  <p><strong>Jeffy is Serverless Application Framework for Python AWS Lambda.</strong></p>
+</div>
 
+
+# Description
 Jeffy is Serverless **"Application"** Framework for Python, which is
 suite of Utilities for Lambda functions to make it easy to develop serverless applications.
 
-Mainly, focusing on three things.
+Mainly, Jeffy is focusing on three things.
 
 - Logging: Providing easy to see JSON format logging, auto logging as a decorator for capturing events and responses and errors, configurable to inject additional attributes what you want to see to logs.
 - Decorators: To save time to implement common things for Lambda functions, providing some useful decorators.
