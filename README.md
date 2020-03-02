@@ -18,9 +18,9 @@ Mainly, Jeffy is focusing on three things.
 - Tracing: Traceable events within related functions and AWS services with generating and passing `correlation_id`.
 - Environment Variables: You can define configuration for Jeffy via Environment Variables of Lambda.
 
-# TOC
+Note: Jeffy is still beta version so it may include some braiking changes via development process. After out of beta(v1.0 release), we will follow semantic versioning
 
-- [Jeffy(Beta)](#jeffy-beta-)
+# TOC
 - [Description](#description)
 - [Install](#install)
 - [Features](#features)
