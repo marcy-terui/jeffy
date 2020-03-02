@@ -1,6 +1,4 @@
-Jeffy(Beta)
-=======
-
+<img src="https://raw.githubusercontent.com/serverless-operations/jeffy/master/logo.png" alt="Serverless Application Framework Jeffy" >
 # Description
 
 Jeffy is Serverless **"Application"** Framework for Python, which is
