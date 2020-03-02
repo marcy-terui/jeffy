@@ -1,4 +1,7 @@
-<img src="https://raw.githubusercontent.com/serverless-operations/jeffy/master/logo.png" alt="Serverless Application Framework Jeffy" >
+<div align="center">
+<img src="https://raw.githubusercontent.com/serverless-operations/jeffy/master/logo.png" alt="Serverless Application Framework Jeffy" style="max-width:60%;">
+</div>
+
 # Description
 
 Jeffy is Serverless **"Application"** Framework for Python, which is
