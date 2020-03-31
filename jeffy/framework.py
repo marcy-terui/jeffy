@@ -1,7 +1,10 @@
-from jeffy.decorators import Decorators
-from jeffy.logger import Logger
+from jeffy.handlers import Handlers
+from jeffy.settings import (
+    Logging,
+    RestApi
+)
 
-framework = None
+app = None
 
 
 class Jeffy(object):
@@ -9,29 +12,33 @@ class Jeffy(object):
     Jeffy framework main class.
     """
 
-    def __init__(self):
-        self.logger = Logger()
-        self.decorator = Decorators(logger=self.logger)
+    def __init__(
+        self,
+        logging: Logging = Logging(),
+        rest_api: RestApi = RestApi()):
+        self.logger = logging.logger
+        self.correlation_attr_name = logging.correlation_attr_name
+        self.handlers = Handlers()
+        self.correlation_id_header = rest_api.correlation_id_header
+        self.correlation_id = ''
 
 
-def setup(**kwargs: dict) -> Jeffy:
+def get_app(**kwargs: dict) -> Jeffy:
     """
-    Jeffy framework setup.
+    Get Jeffy framework application.
 
     Parameters
     ----------
-    logger: logging.Logger
-        Logger instance
-    enable_event_logging: bool
-        Enable event payload logging
-    enable_result_logging: bool
-        Enable result(return value of the functions) logging
+    logging: jeffy.settings.Logging
+        Logging settings
+    http_api: jeffy.settings.RestApi
+        Logging settings
 
     Returns
     -------
-    framework : jeffy.framework.Jeffy
+    app : jeffy.framework.Jeffy
     """
-    global framework
-    if framework is None:
-        framework = Jeffy(**kwargs)  # type: ignore
-    return framework
+    global app
+    if app is None or len(kwargs) > 0:
+        app = Jeffy(**kwargs)  # type: ignore
+    return app

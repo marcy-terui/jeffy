@@ -15,36 +15,34 @@ Mainly, focusing on three things.
 
 # TOC
 
-- [Jeffy(Beta)](#jeffy-beta-)
-- [Description](#description)
-- [Install](#install)
-- [Features](#features)
-  * [Logging](#logging)
-    + [Basic Usage](#basic-usage)
-    + [Injecting additional attributes to CloudWatchLogs](#injecting-additional-attributes-to-cloudwatchlogs)
-    + [Auto Logging](#auto-logging)
-  * [Decorators](#decorators)
-    + [json_scheme_validator](#json-scheme-validator)
-    + [api_json_scheme_validator](#api-json-scheme-validator)
-    + [api](#api)
-    + [sqs](#sqs)
-    + [sns](#sns)
-    + [kinesis_stream](#kinesis-stream)
-    + [dynamodb_stream](#dynamodb-stream)
-    + [s3](#s3)
-    + [schedule](#schedule)
-  * [Tracing](#tracing)
-    + [Kinesis Clinent](#kinesis-clinent)
-    + [SNS Client](#sns-client)
-    + [SQS Client](#sqs-client)
-    + [S3 Client](#s3-client)
-    + [Environment Variables](#environment-variables)
-    + [Example serverless.yml of Serverless Framework using supported environment variables](#example-serverlessyml-of-serverless-framework-using-supported-environment-variables)
-- [Requirements](#requirements)
-  * [Development](#development)
-  * [Authors](#authors)
-  * [Credits](#credits)
-  * [License](#license)
+<!-- vscode-markdown-toc -->
+* 1. [Logging](#Logging)
+	* 1.1. [Basic Usage](#BasicUsage)
+	* 1.2. [Injecting additional attributes to logs](#Injectingadditionalattributestologs)
+	* 1.3. [Change the attribute name of correlation id](#Changetheattributenameofcorrelationid)
+	* 1.4. [Change the log lervel](#Changetheloglervel)
+* 2. [Event source specific decorators](#Eventsourcespecificdecorators)
+	* 2.1. [Common handler](#Commonhandler)
+	* 2.2. [rest_api](#rest_api)
+	* 2.3. [sqs](#sqs)
+	* 2.4. [sns](#sns)
+	* 2.5. [kinesis_streams](#kinesis_streams)
+	* 2.6. [dynamodb_streams](#dynamodb_streams)
+	* 2.7. [s3](#s3)
+	* 2.8. [schedule](#schedule)
+* 3. [Validation](#Validation)
+	* 3.1. [JSON Scheme Validator](#JSONSchemeValidator)
+* 4. [Tracing](#Tracing)
+	* 4.1. [Kinesis Clinent](#KinesisClinent)
+	* 4.2. [SNS Client](#SNSClient)
+	* 4.3. [SQS Client](#SQSClient)
+	* 4.4. [S3 Client](#S3Client)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
 
 # Install
 
@@ -53,12 +51,15 @@ $ pip install jeffy
 ```
 
 # Features
-## Logging
-### Basic Usage
+
+##  1. <a name='Logging'></a>Logging
+
+###  1.1. <a name='BasicUsage'></a>Basic Usage
 Jeffy logger automatically inject some Lambda contexts to CloudWatchLogs.
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+
+app = get_app()
 
 def handler(event, context):
     app.logger.info({"foo":"bar"})
@@ -67,9 +68,7 @@ def handler(event, context):
 Output in CloudWatchLogs
 ```json
 {
-   "message": {
-       "foo":"bar","item":"aa"
-    },
+   "msg": {"foo":"bar"},
    "aws_region":"us-east-1",
    "function_name":"jeffy-dev-hello",
    "function_version":"$LATEST",
@@ -80,14 +79,14 @@ Output in CloudWatchLogs
 }
 ```
 
-### Injecting additional attributes to CloudWatchLogs
-You can inject some additional attributes what you want to output with using `setup` method.
+###  1.2. <a name='Injectingadditionalattributestologs'></a>Injecting additional attributes to logs
+You can inject some additional attributes what you want to output with using `update_context` method.
 
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+app = get_app()
 
-app.logger.setup({
+app.logger.update_context({
    "username":"user1",
    "email":"user1@example.com"
 })
@@ -99,9 +98,7 @@ def handler(event, context):
 Output in CloudWatchLogs
 ```json
 {
-   "message": {
-       "foo":"bar","item":"aa"
-    },
+   "msg": {"foo":"bar"},
    "username":"user1",
    "email":"user1@example.com",
    "aws_region":"us-east-1",
@@ -114,19 +111,63 @@ Output in CloudWatchLogs
 }
 ```
 
-### Auto Logging
-`auto_logging` decorator allows you to output `event`, `response` and `stacktrace` when you face Exceptions
+###  1.3. <a name='Changetheattributenameofcorrelationid'></a>Change the attribute name of correlation id
+You can change the attribute name of correlation id in the setting options. 
 
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+from jeffy.settings import Logging
+app = get_app(logging=Logging(correlation_attr_name='my-trace-id'))
 
-app.logger.setup({
+def handler(event, context):
+    app.logger.info({"foo":"bar"})
+```
+
+Output in CloudWatchLogs
+```json
+{
+   "msg": {"foo":"bar"},
+   "aws_region":"us-east-1",
+   "function_name":"jeffy-dev-hello",
+   "function_version":"$LATEST",
+   "function_memory_size":"1024",
+   "log_group_name":"/aws/lambda/jeffy-dev-hello",
+   "log_stream_name":"2020/01/21/[$LATEST]d7729c0ea59a4939abb51180cda859bf",
+   "my-trace-id":"f79759e3-0e37-4137-b536-ee9a94cd4f52"
+}
+```
+
+###  1.4. <a name='Changetheloglervel'></a>Change the log lervel
+You can change the log level of Jeffy logger. 
+
+```python
+import logging
+from jeffy.framework import get_app
+from jeffy.settings import Logging
+app = get_app(logging=Logging(log_level=logging.DEBUG))
+
+def handler(event, context):
+    app.logger.info({"foo":"bar"})
+```
+
+##  2. <a name='Eventsourcespecificdecorators'></a>Event source specific decorators
+Decorators make simple to implement common lamdba tasks, such as parsing array from Kinesis, SNS, SQS events etc.
+
+Here are provided decorators
+
+###  2.1. <a name='Commonhandler'></a>Common handler
+`common` decorator allows you to output `event`, `response` and error infomations when you face Exceptions
+
+```python
+from jeffy.framework import get_app
+app = get_app()
+
+app.logger.update_context({
    "username":"user1",
    "email":"user1@example.com"
 })
 
-@app.decorator.auto_logging
+@app.handlers.common
 def handler(event, context):
     ...
 ```
@@ -135,8 +176,8 @@ Error output with auto_logging
 
 ```json
 {
-   "error_message": "JSONDecodeError('Expecting value: line 1 column 1 (char 0)')", 
-   "stack_trace":"Traceback (most recent call last):
+   "msg": "JSONDecodeError('Expecting value: line 1 column 1 (char 0)')", 
+   "exec_info":"Traceback (most recent call last):
   File '/var/task/jeffy/decorators.py', line 41, in wrapper
     raise e
   File '/var/task/jeffy/decorators.py', line 36, in wrapper
@@ -153,76 +194,61 @@ Error output with auto_logging
    "function_version":"$LATEST",
    "function_memory_size":"1024",
    "log_group_name":"/aws/lambda/jeffy-dev-hello",
-   "log_stream_name":"2020/01/21/[$LATEST]90e1f70f6e774e07b681e704646feec0"
+   "log_stream_name":"2020/01/21/[$LATEST]90e1f70f6e774e07b681e704646feec0",
+   "correlation_id":"f79759e3-0e37-4137-b536-ee9a94cd4f52"
 }
 
 ```
 
-## Decorators
-Decorators make simple to implement common lamdba tasks, such as parsing array from Kinesis, SNS, SQS events etc.
-
-Here are provided decorators
-
-### json_scheme_validator
-Decorator for Json scheme valiidator. Automatically validate `event.["body"]` with following json scheme you define. raise exception if the validation fails.
+###  2.2. <a name='rest_api'></a>rest_api
+Decorator for API Gateway event. Automatically get the correlation id from request header and set the correlation id to response header.
 
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+from jeffy.encoding.json import JsonEncoding
+app = get_app()
 
-@app.decorator.json_scheme_validator(
-    json_scheme={
-       "type":"object",
-       "properties": {
-           "message": {"type":"string"}
-        }
+@app.handlers.rest_api(encoding=JsonEncoding())
+def handler(event, context):
+    return {
+        'statusCode': 200,
+        'headers': 'Content-Type':'application/json',
+        'body': json.dumps({
+            'resutl': 'ok.'
+        })
     }
-)
-def handler(event, context):
-    return event["body"]["foo"] 
 ```
 
-### api_json_scheme_validator
-Decorator for Json scheme valiidator for API Gateway. Automatically validate `event.["body"]` with following json scheme. Returns 400 error if the validation fails.
+Default header name is 'x-jeffy-correlation-id'. 
+You can change this name in the setting option.
 
 ```python
-from jeffy.framework import setup
-app = setup()
-@app.decorator.api_json_scheme_validator(
-    json_scheme={
-       "type":"object",
-       "properties": {
-           "message": {"type":"string"}
-        }
-    },
-    response_headers={
-       "Content-Type":"application/jsoset=utf-8"
+from jeffy.framework import get_app
+from jeffy.wncoding.json import JsonEncoding
+from jeffy.settings import RestApi
+app = get_app(
+    rest_api=RestApi(correlation_id_header='x-foo-bar'))
+
+@app.handlers.rest_api(encoding=JsonEncoding())
+def handler(event, context):
+    return {
+        'statusCode': 200,
+        'headers': 'Content-Type':'application/json',
+        'body': json.dumps({
+            'resutl': 'ok.'
+        })
     }
-)
-def handler(event, context):
-    return event["body"]["foo"]
 ```
 
-### api
-Decorator for API Gateway event. Automatically parse string if `event["body"]` can be parsed as Dictionary and set correlation_id in `event["correlation_id"]` you should pass to next event, returns 500 error if unexpected error happens.
-
-```python
-from jeffy.framework import setup
-app = setup()
-
-@app.decorator.api
-def handler(event, context):
-    return event["body"]["foo"] # returns 500 error if unexpected error happens.
-```
-
-### sqs
+###  2.3. <a name='sqs'></a>sqs
 Decorator for sqs event. Automaticlly parse `"event.Records"` list from SQS event source to each items for making it easy to treat it inside main process of Lambda.
 
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+from jeffy.encoding.json import JsonEncoding
+app = get_app()
 
-@app.decorator.sqs
+@app.handlers.sqs(encoding=JsonEncoding())
 def handler(event, context):
     return event["foo"]
     """
@@ -237,14 +263,15 @@ def handler(event, context):
     """
 ```
 
-### sns
+###  2.4. <a name='sns'></a>sns
 Decorator for sns event. Automaticlly parse `"event.Records"` list from SNS event source to each items for making it easy to treat it inside main process of Lambda.
 
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+from jeffy.encoding.json import JsonEncoding
+app = get_app()
 
-@app.decorator.sns
+@app.handlers.sns(encoding=JsonEncoding())
 def handler(event, context):
     return event["foo"]
     """
@@ -259,11 +286,15 @@ def handler(event, context):
     """
 ```
 
-### kinesis_stream
+###  2.5. <a name='kinesis_streams'></a>kinesis_streams
 Decorator for kinesis stream event. Automaticlly parse `"event.Records"` list from Kinesis event source to each items and decode it with base64 for making it easy to treat it inside main process of Lambda.
 
 ```python
-@app.decorator.kinesis_stream
+from jeffy.framework import get_app
+from jeffy.encoding.json import JsonEncoding
+app = get_app()
+
+@app.handlers.kinesis_streams(encoding=JsonEncoding())
 def handler(event, context):
     return event["foo"]
     """
@@ -278,14 +309,14 @@ def handler(event, context):
     """
 ```
 
-### dynamodb_stream
+###  2.6. <a name='dynamodb_streams'></a>dynamodb_streams
 Decorator for dynamodb stream event. Automaticlly parse `"event.Records"` list from Dynamodb event source to  items for making it easy to treat it inside main process of Lambda.
 
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+app = get_app()
 
-@app.decorator.dynamodb_stream
+@app.handlers.dynamodb_streams
 def handler(event, context):
     return event["foo"]
     """
@@ -300,118 +331,117 @@ def handler(event, context):
     """
 ```
 
-### s3
+###  2.7. <a name='s3'></a>s3
 Decorator for S3 event. Automatically parse body stream from triggered S3 object and S3 bucket and key name to Lambda.
 
 ```python
-from jeffy.framework import setup
-app = setup()
+from jeffy.framework import get_app
+from jeffy.encoding.bytes import BytesEncoding
+app = get_app()
 
-@app.decorator.s3
+@app.handlers.s3(encoding=BytesEncoding())
 def handler(event, context):
-    event["key"] # S3 bucket key
-    event["bucket_name"] # S3 bucket name
-    event["body"] # object stream from triggered S3 object
-    event["correlation_id"] # correlation_id
-    
+    event['key'] # S3 bucket key
+    event['bucket_name'] # S3 bucket name
+    event['body'] # object stream from triggered S3 object
+    event['correlation_id'] # correlation_id
+    event['metadata'] # object matadata
 ```
 
-### schedule
+###  2.8. <a name='schedule'></a>schedule
 Decorator for schedule event. just captures correlation id before main Lambda process. do nothing other than that.
 
 ```python
 from jeffy.framework import setup
 app = setup()
 
-@app.decorator.schedule
+@app.handlers.schedule
 def handler(event, context):
     ...
 ```
 
+##  3. <a name='Validation'></a>Validation
 
-## Tracing
+###  3.1. <a name='JSONSchemeValidator'></a>JSON Scheme Validator
+`JsonSchemeValidator` is automatically validate event payload with following json scheme you define. raise `ValidationError` exception if the validation fails.
+
+```python
+from jeffy.framework import get_app
+from jeffy.encoding.json import JsonEncoding
+from jeffy.validator.jsonscheme import JsonSchemeValidator
+from jeffy.settings import RestApi
+app = get_app()
+
+@app.handlers.rest_api(encoding=JsonEncoding(), JsonSchemeValidator(scheme={
+    "type":"object",
+    "properties": {
+        "message": {"type":"string"}
+    }
+}))
+def handler(event, context):
+    return {
+        'statusCode': 200,
+        'headers': 'Content-Type':'application/json',
+        'body': json.dumps({
+            'message': 'ok.'
+        })
+    }
+```
+
+##  4. <a name='Tracing'></a>Tracing
 `correlation_id` is to trace subsequent Lambda functions and services. Jeffy automatically extract correlation IDs and caputure logs from the invocation event.
 
-Also, Jeffy provide boto3 wrapper client to create and inject `correlation_id`.
+Also, Jeffy provide boto3 wrapper client to create and automatically inject `correlation_id`.
 
-### Kinesis Clinent
+###  4.1. <a name='KinesisClinent'></a>Kinesis Clinent
 
 ```python
 from jeffy.sdk.kinesis import Kinesis
 
 def handler(event, context):
-    Kinesis.put_record(
+    Kinesis().put_record(
         stream_name=os.environ["STREAM_NAME"],
         data={"foo": "bar"},
-        partition_key="uuid",
-        correlation_id=event.get("correlation_id")
+        partition_key="uuid"
     )
 ```
 
-### SNS Client
+###  4.2. <a name='SNSClient'></a>SNS Client
 
 ```python
 from jeffy.sdk.sns import Sns
 
 def handler(event, context):
-    Sns.publish(
+    Sns().publish(
         topic_arn=os.environ["TOPIC_ARN"],
         message="message",
-        subject="subject",
-        correlation_id=event.get("correlation_id")
+        subject="subject"
     )
 ```
 
-### SQS Client
+###  4.3. <a name='SQSClient'></a>SQS Client
 
 ```python
 from jeffy.sdk.sqs import Sqs
 
 def handler(event, context):
-    Sqs.send_message(
+    Sqs().send_message(
         queue_url=os.environ["QUEUE_URL"],
-        message="message",
-        correlation_id=event.get("correlation_id")
+        message="message"
     )
 ```
 
-### S3 Client
+###  4.4. <a name='S3Client'></a>S3 Client
 
 ```python
 from jeffy.sdk.s3 import S3
 
 def handler(event, context):
-    S3.upload_file(
+    S3().upload_file(
         file_path="path/to/file", 
         bucket_name=os.environ["BUCKET_NAME"],
-        object_name="path/to/object",
-        correlation_id=event.get("correlation_id")
+        object_name="path/to/object"
     )
-```
-
-### Environment Variables
-Here is configutable values for Jeffy.
-
-| Environment variable | Description | Default |
-------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------
- JEFFY_LOG_LEVEL | Sets logging level | "INFO" 
-
-### Example serverless.yml of Serverless Framework using supported environment variables
-
-You can switch loglevel according to environment. The following example is to enable debug log other than production. 
-
-```yaml
-provider:
-  name: aws
-  region: us-east-1
-  stage: ${opt:stage, 'dev'}
-  environment:
-    JEFFY_LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}, self:custom.logLevel.default}
-
-custom:
-  logLevel:
-    production: ERROR
-    default: DEBUG
 ```
 
 # Requirements

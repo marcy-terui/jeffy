@@ -2,16 +2,17 @@ import boto3
 import json
 from typing import Any
 
+from jeffy.sdk import SdkBase
 
-class Kinesis():
+
+class Kinesis(SdkBase):
     """
     Kinesis Client.
     """
 
     _resource = None
 
-    @classmethod
-    def get_resource(cls) -> boto3.client:
+    def get_resource(self) -> boto3.client:
         """
         Get boto3 client for Kinesis.
 
@@ -23,19 +24,20 @@ class Kinesis():
             Kinesis._resource = boto3.client('kinesis')
         return Kinesis._resource
 
-    @classmethod
-    def put_record(cls, stream_name: str, data: Any, partition_key: str, correlation_id: str = ''):
+    def put_record(self, stream_name: str, data: Any, partition_key: str, correlation_id: str = ''):
         """
         Put recourd to Kinesis Stream with correlation_id.
 
         Usage::
             >>> from jeffy.sdk.kinesis import Kinesis
-            >>> Sqs.put_record(...)
+            >>> Kinesis().put_record(...)
         """
-        return cls.get_resource().put_record(
+        if correlation_id == '':
+            correlation_id = self.app.correlation_id
+        return self.get_resource().put_record(
             StreamName=stream_name,
             Data=json.dumps({
-                'correlation_id': correlation_id,
+                self.app.correlation_attr_name: correlation_id,
                 'item': data
             }),
             PartitionKey=partition_key,
