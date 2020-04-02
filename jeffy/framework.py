@@ -1,61 +1,44 @@
-import functools
-import logging
-from typing import Any, Callable
+from jeffy.handlers import Handlers
+from jeffy.settings import (
+    Logging,
+    RestApi
+)
 
-framework = None
+app = None
 
 
 class Jeffy(object):
+    """
+    Jeffy framework main class.
+    """
 
     def __init__(
         self,
-        logger: logging.Logger,
-        enable_event_logging: bool = True,
-        enable_result_logging: bool = True
-    ):
-        self.logger = logger
-        self.enable_event_logging = enable_event_logging
-        self.enable_result_logging = enable_result_logging
-
-    def log(self, msg: Any, level: int =logging.INFO) -> None:
-        self.logger.log(level, msg)
-
-    def _event_log(self, msg: Any) -> None:
-        if self.enable_event_logging is True:
-            self.log(msg)
-
-    def general_event_handler(self, func: Callable) -> Callable:
-        @functools.wraps(func)
-        def wrapper(event: dict, context: Any) -> Any:
-            self._event_log(event)
-            try:
-                result = func(event, context)
-            except Exception as e:
-                self.logger.exception(str(e))
-                raise e
-            self.logger.info(result)
-            return result
-        return wrapper
+        logging: Logging = Logging(),
+        rest_api: RestApi = RestApi()):
+        self.logger = logging.logger
+        self.correlation_attr_name = logging.correlation_attr_name
+        self.handlers = Handlers()
+        self.correlation_id_header = rest_api.correlation_id_header
+        self.correlation_id = ''
 
 
-def setup(**kwargs: dict) -> Jeffy:
+def get_app(**kwargs: dict) -> Jeffy:
     """
-    Setup Jeffy framework
+    Get Jeffy framework application.
 
     Parameters
     ----------
-    logger: logging.Logger
-        Logger instance
-    enable_event_logging: bool
-        Enable event payload logging
-    enable_result_logging: bool
-        Enable result(return value of the functions) logging
+    logging: jeffy.settings.Logging
+        Logging settings
+    http_api: jeffy.settings.RestApi
+        Logging settings
 
     Returns
     -------
-    framework : jeffy.framework.Jeffy
+    app : jeffy.framework.Jeffy
     """
-    global framework
-    if framework is None:
-        framework = Jeffy(**kwargs)  # type: ignore
-    return framework
+    global app
+    if app is None or len(kwargs) > 0:
+        app = Jeffy(**kwargs)  # type: ignore
+    return app
